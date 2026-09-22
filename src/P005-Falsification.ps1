@@ -1,0 +1,4 @@
+[CmdletBinding()]param([string]$InputRoot=(Join-Path $PSScriptRoot '..\evidence\P004'),[string]$OutputRoot=(Join-Path $PSScriptRoot '..\evidence\P005'))
+Set-StrictMode -Version Latest;$ErrorActionPreference='Stop';New-Item -ItemType Directory -Force -Path $OutputRoot|Out-Null
+$d=Get-Content (Join-Path $InputRoot 'classification.json') -Raw|ConvertFrom-Json;$items=@($d.items)|ForEach-Object{[pscustomobject]@{category=$_.category;hypothesis=('Indicator cluster in '+$_.category+' requires verification');expected_evidence=('Independent corroborating evidence for '+$_.category);observed_count=$_.count;result='UNVERIFIED'}}
+[pscustomobject]@{schema='P005';source_sha256=(Get-FileHash (Join-Path $InputRoot 'classification.json') -Algorithm SHA256).Hash;items=$items;validation='NOT_VALIDATED'}|ConvertTo-Json -Depth 8|Set-Content (Join-Path $OutputRoot 'falsification.json') -Encoding UTF8
