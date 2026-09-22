@@ -1,0 +1,130 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://cerclepalace.github.io/OutilsEspion/schemas/oep/v1/oep.schema.json",
+  "title": "OutilsEspion Evidence Package v1",
+  "type": "object",
+  "required": ["manifest", "evidence", "analysis", "timeline", "graph", "risk", "controls", "final", "integrity"],
+  "additionalProperties": false,
+  "properties": {
+    "manifest": { "$ref": "#/$defs/manifest" },
+    "evidence": { "$ref": "#/$defs/evidenceCollection" },
+    "analysis": { "$ref": "#/$defs/analysis" },
+    "timeline": { "$ref": "#/$defs/timeline" },
+    "graph": { "$ref": "#/$defs/graph" },
+    "risk": { "$ref": "#/$defs/risk" },
+    "controls": { "$ref": "#/$defs/controls" },
+    "final": { "$ref": "#/$defs/final" },
+    "integrity": { "$ref": "#/$defs/integrity" }
+  },
+  "$defs": {
+    "id": { "type": "string", "minLength": 1 },
+    "refArray": { "type": "array", "items": { "$ref": "#/$defs/id" }, "uniqueItems": true },
+    "manifest": {
+      "type": "object",
+      "required": ["oep_version", "package_id", "created_at", "producer", "target", "analysis", "integrity"],
+      "additionalProperties": false,
+      "properties": {
+        "oep_version": { "const": "1.0" },
+        "package_id": { "$ref": "#/$defs/id" },
+        "created_at": { "type": "string", "format": "date-time" },
+        "producer": {
+          "type": "object", "required": ["name", "version"], "additionalProperties": false,
+          "properties": { "name": { "const": "OutilsEspion" }, "version": { "type": "string" } }
+        },
+        "target": {
+          "type": "object", "required": ["platform", "collection_mode", "read_only"], "additionalProperties": false,
+          "properties": { "platform": { "const": "Windows" }, "collection_mode": { "const": "offline" }, "read_only": { "const": true } }
+        },
+        "analysis": {
+          "type": "object", "required": ["status", "engine_version"], "additionalProperties": false,
+          "properties": { "status": { "enum": ["completed", "partial", "failed"] }, "engine_version": { "type": "string" } }
+        },
+        "integrity": {
+          "type": "object", "required": ["algorithm"], "additionalProperties": false,
+          "properties": { "algorithm": { "const": "SHA-256" } }
+        }
+      }
+    },
+    "evidenceRecord": {
+      "type": "object", "required": ["evidence_id", "category", "source", "collected_at_utc", "status", "value"], "additionalProperties": false,
+      "properties": {
+        "evidence_id": { "$ref": "#/$defs/id" },
+        "category": { "type": "string" },
+        "source": { "type": "string" },
+        "collected_at_utc": { "type": "string", "format": "date-time" },
+        "status": { "enum": ["COLLECTED", "COLLECTOR_ERROR"] },
+        "value": {},
+        "error": { "type": "string" }
+      }
+    },
+    "evidenceCollection": {
+      "type": "object", "required": ["schema", "items"], "additionalProperties": false,
+      "properties": {
+        "schema": { "const": "oep.evidence.v1" },
+        "items": { "type": "array", "items": { "$ref": "#/$defs/evidenceRecord" } }
+      }
+    },
+    "detection": {
+      "type": "object", "required": ["detection_id", "evidence_refs", "rule", "type", "status"], "additionalProperties": false,
+      "properties": {
+        "detection_id": { "$ref": "#/$defs/id" },
+        "evidence_refs": { "$ref": "#/$defs/refArray" },
+        "rule": { "type": "object", "required": ["id", "version"], "additionalProperties": false, "properties": { "id": { "type": "string" }, "version": { "type": "string" } } },
+        "type": { "type": "string" },
+        "status": { "const": "REQUIRES_REVIEW" }
+      }
+    },
+    "analysis": {
+      "type": "object", "required": ["detections", "correlations", "classifications", "falsification", "findings"], "additionalProperties": false,
+      "properties": {
+        "detections": { "type": "array", "items": { "$ref": "#/$defs/detection" } },
+        "correlations": { "type": "array", "items": { "type": "object" } },
+        "classifications": { "type": "array", "items": { "type": "object" } },
+        "falsification": { "type": "array", "items": { "type": "object" } },
+        "findings": { "type": "array", "items": { "$ref": "#/$defs/finding" } }
+      }
+    },
+    "finding": {
+      "type": "object", "required": ["finding_id", "title", "classification", "confidence", "evidence_refs", "status"], "additionalProperties": false,
+      "properties": {
+        "finding_id": { "$ref": "#/$defs/id" },
+        "title": { "type": "string" },
+        "severity": { "enum": ["info", "low", "medium", "high", "critical"] },
+        "classification": { "enum": ["BENIGN", "UNKNOWN", "SUSPICIOUS", "HIGH_RISK"] },
+        "confidence": { "enum": ["low", "medium", "high", "unknown"] },
+        "evidence_refs": { "$ref": "#/$defs/refArray" },
+        "detection_refs": { "$ref": "#/$defs/refArray" },
+        "correlation_refs": { "$ref": "#/$defs/refArray" },
+        "falsification_refs": { "$ref": "#/$defs/refArray" },
+        "status": { "enum": ["needs_review", "validated", "rejected", "unverified"] }
+      }
+    },
+    "timeline": {
+      "type": "object", "required": ["schema", "events"], "additionalProperties": false,
+      "properties": { "schema": { "const": "oep.timeline.v1" }, "events": { "type": "array", "items": { "type": "object", "required": ["event_id", "timestamp", "type", "evidence_refs"], "additionalProperties": false, "properties": { "event_id": { "$ref": "#/$defs/id" }, "timestamp": { "type": "string", "format": "date-time" }, "type": { "type": "string" }, "evidence_refs": { "$ref": "#/$defs/refArray" } } } } }
+    },
+    "graph": {
+      "type": "object", "required": ["nodes", "edges"], "additionalProperties": false,
+      "properties": {
+        "nodes": { "type": "array", "items": { "type": "object", "required": ["node_id", "type", "label", "evidence_refs"], "additionalProperties": false, "properties": { "node_id": { "$ref": "#/$defs/id" }, "type": { "type": "string" }, "label": { "type": "string" }, "evidence_refs": { "$ref": "#/$defs/refArray" } } } },
+        "edges": { "type": "array", "items": { "type": "object", "required": ["edge_id", "source", "target", "relationship", "evidence_refs"], "additionalProperties": false, "properties": { "edge_id": { "$ref": "#/$defs/id" }, "source": { "$ref": "#/$defs/id" }, "target": { "$ref": "#/$defs/id" }, "relationship": { "type": "string" }, "evidence_refs": { "$ref": "#/$defs/refArray" } } } }
+      }
+    },
+    "risk": {
+      "type": "object", "required": ["items"], "additionalProperties": false,
+      "properties": { "items": { "type": "array", "items": { "type": "object", "required": ["risk_id", "finding_refs", "impact", "likelihood"], "additionalProperties": false, "properties": { "risk_id": { "$ref": "#/$defs/id" }, "finding_refs": { "$ref": "#/$defs/refArray" }, "impact": { "enum": ["UNKNOWN", "LOW", "MEDIUM", "HIGH", "CRITICAL"] }, "likelihood": { "enum": ["UNKNOWN", "LOW", "MEDIUM", "HIGH"] }, "basis_refs": { "$ref": "#/$defs/refArray" } } } } }
+    },
+    "controls": {
+      "type": "object", "required": ["items"], "additionalProperties": false,
+      "properties": { "items": { "type": "array", "items": { "type": "object", "required": ["control_id", "risk_refs", "authorization_required", "status"], "additionalProperties": false, "properties": { "control_id": { "$ref": "#/$defs/id" }, "risk_refs": { "$ref": "#/$defs/refArray" }, "authorization_required": { "const": true }, "status": { "enum": ["PENDING", "VALIDATED", "REJECTED"] }, "description": { "type": "string" } } } } }
+    },
+    "final": {
+      "type": "object", "required": ["audit_status", "confidence", "finding_refs", "risk_refs", "control_refs"], "additionalProperties": false,
+      "properties": { "audit_status": { "enum": ["NOT_VALIDATED", "NEEDS_REVIEW", "VALIDATED"] }, "confidence": { "enum": ["low", "medium", "high", "unknown"] }, "finding_refs": { "$ref": "#/$defs/refArray" }, "risk_refs": { "$ref": "#/$defs/refArray" }, "control_refs": { "$ref": "#/$defs/refArray" }, "compromise_confirmed": { "const": false }, "summary": { "type": "string" } }
+    },
+    "integrity": {
+      "type": "object", "required": ["algorithm", "files"], "additionalProperties": false,
+      "properties": { "algorithm": { "const": "SHA-256" }, "files": { "type": "object", "additionalProperties": { "type": "string", "pattern": "^[A-Fa-f0-9]{64}$" } } }
+    }
+  }
+}
