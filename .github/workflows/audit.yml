@@ -1,0 +1,33 @@
+name: Audit tool validation
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  powershell-syntax:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Parse PowerShell
+        shell: pwsh
+        run: |
+          $tokens = $null
+          $errors = $null
+          [System.Management.Automation.Language.Parser]::ParseFile(
+            "$PWD/src/Invoke-OutilsEspion.ps1",
+            [ref]$tokens,
+            [ref]$errors
+          ) | Out-Null
+          if ($errors.Count -gt 0) {
+            $errors | Format-List *
+            exit 1
+          }
+          Write-Host 'PowerShell syntax: PASS'
+      - name: Package size gate
+        shell: pwsh
+        run: |
+          $bytes = (Get-ChildItem -Recurse -File | Measure-Object -Property Length -Sum).Sum
+          $mb = [math]::Round($bytes / 1MB, 2)
+          Write-Host "Repository payload: $mb MB"
+          if ($bytes -gt 8GB) { throw 'USB package exceeds 8 GB target.' }
