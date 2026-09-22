@@ -1,0 +1,4 @@
+[CmdletBinding()]param([string]$InputRoot=(Join-Path $PSScriptRoot '..\evidence\P005'),[string]$OutputRoot=(Join-Path $PSScriptRoot '..\evidence\P008'))
+Set-StrictMode -Version Latest;$ErrorActionPreference='Stop';New-Item -ItemType Directory -Force -Path $OutputRoot|Out-Null
+$d=Get-Content (Join-Path $InputRoot 'falsification.json') -Raw|ConvertFrom-Json;$items=@($d.items)|ForEach-Object{[pscustomobject]@{category=$_.category;falsification=$_.result;risk_status=if($_.result -eq 'SUPPORTED'){'ASSESSED'}else{'UNVERIFIED'};impact='UNKNOWN';likelihood='UNKNOWN';action='REQUIRES_AUTHORIZATION'}}
+[pscustomobject]@{schema='P008';items=$items;scoring_policy='NO_SCORE_WITHOUT_VERIFIED_FACT';validation='NOT_VALIDATED'}|ConvertTo-Json -Depth 8|Set-Content (Join-Path $OutputRoot 'risk.json') -Encoding UTF8
