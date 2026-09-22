@@ -1,0 +1,5 @@
+[CmdletBinding()]param([string]$InputRoot=(Join-Path $PSScriptRoot '..\evidence\P001'),[string]$OutputRoot=(Join-Path $PSScriptRoot '..\evidence\P007'))
+Set-StrictMode -Version Latest;$ErrorActionPreference='Stop';New-Item -ItemType Directory -Force -Path $OutputRoot|Out-Null
+$d=Get-Content (Join-Path $InputRoot 'raw\inventory.json') -Raw|ConvertFrom-Json;$nodes=[System.Collections.Generic.List[object]]::new();$edges=[System.Collections.Generic.List[object]]::new()
+foreach($r in $d.records){$id=$r.evidence_id;$nodes.Add([pscustomobject]@{id=$id;type='EVIDENCE';category=$r.category;source=$r.source});if($r.category -eq 'execution'){$edges.Add([pscustomobject]@{from='HOST';to=$id;relation='OBSERVED_EXECUTION'})}elseif($r.category -eq 'network'){$edges.Add([pscustomobject]@{from='HOST';to=$id;relation='OBSERVED_NETWORK'})}}
+[pscustomobject]@{schema='P007';nodes=$nodes;edges=$edges;validation='NOT_VALIDATED'}|ConvertTo-Json -Depth 8|Set-Content (Join-Path $OutputRoot 'graph.json') -Encoding UTF8
