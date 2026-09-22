@@ -1,0 +1,4 @@
+[CmdletBinding()]param([string]$InputRoot=(Join-Path $PSScriptRoot '..\evidence\P008'),[string]$OutputRoot=(Join-Path $PSScriptRoot '..\evidence\P009'))
+Set-StrictMode -Version Latest;$ErrorActionPreference='Stop';New-Item -ItemType Directory -Force -Path $OutputRoot|Out-Null
+$d=Get-Content (Join-Path $InputRoot 'risk.json') -Raw|ConvertFrom-Json;$controls=@($d.items)|ForEach-Object{[pscustomobject]@{category=$_.category;required_control=if($_.risk_status -eq 'ASSESSED'){'Document and test targeted control'}else{'Collect independent evidence before control decision'};authorization_required=$true;status='PENDING'}}
+[pscustomobject]@{schema='P009';controls=$controls;mutation_policy='NO_AUTOMATIC_REMEDIATION';validation='NOT_VALIDATED'}|ConvertTo-Json -Depth 8|Set-Content (Join-Path $OutputRoot 'controls.json') -Encoding UTF8
