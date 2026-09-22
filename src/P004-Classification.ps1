@@ -1,0 +1,4 @@
+[CmdletBinding()]param([string]$InputRoot=(Join-Path $PSScriptRoot '..\evidence\P003'),[string]$OutputRoot=(Join-Path $PSScriptRoot '..\evidence\P004'))
+Set-StrictMode -Version Latest;$ErrorActionPreference='Stop';New-Item -ItemType Directory -Force -Path $OutputRoot|Out-Null
+$d=Get-Content (Join-Path $InputRoot 'correlations.json') -Raw|ConvertFrom-Json;$items=@($d.correlations)|ForEach-Object{[pscustomobject]@{category=$_.category;classification=if($_.count -ge 3){'HIGH_SIGNAL_REVIEW'}elseif($_.count -gt 0){'REVIEW'}else{'NO_SIGNAL'};count=$_.count;finding_ids=$_.finding_ids}}
+[pscustomobject]@{schema='P004';source_sha256=(Get-FileHash (Join-Path $InputRoot 'correlations.json') -Algorithm SHA256).Hash;items=$items;validation='NOT_VALIDATED'}|ConvertTo-Json -Depth 8|Set-Content (Join-Path $OutputRoot 'classification.json') -Encoding UTF8
